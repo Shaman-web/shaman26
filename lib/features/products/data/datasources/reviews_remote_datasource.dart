@@ -37,14 +37,15 @@ class ReviewsRemoteDataSourceImpl implements ReviewsRemoteDataSource {
   Future<ReviewModel> createReview({required int productId, required int rating, String? comment}) async {
     final uri = Uri.parse('${ApiConstants.baseUrl}/reviews');
     final headers = {'Content-Type': 'application/json'};
-    final token = tokenManager == null ? null : await tokenManager!.getAccessToken();
-    if (token != null) headers['Authorization'] = 'Bearer $token';
+  final token = await tokenManager?.getAccessToken();
+  if (token != null) headers['Authorization'] = 'Bearer $token';
 
-    final body = json.encode({
+    final Map<String, dynamic> payload = {
       'productId': productId,
       'rating': rating,
-      if (comment != null) 'comment': comment,
-    });
+    };
+    if (comment != null) payload['comment'] = comment;
+    final body = json.encode(payload);
 
     final resp = await client.post(uri, headers: headers, body: body);
     if (resp.statusCode >= 200 && resp.statusCode < 300) {

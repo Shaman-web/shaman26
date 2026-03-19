@@ -2,26 +2,16 @@ import '../../domain/entities/wishlist_item.dart';
 
 class WishlistItemModel extends WishlistItem {
   WishlistItemModel({
-    required int id,
-    required int productId,
-    String? name,
-    double? price,
-    double? discount,
-    String? mainImage,
-    int? qty,
-    int? reviewsCount,
-    double? averageRating,
-  }) : super(
-          id: id,
-          productId: productId,
-          name: name,
-          price: price,
-          discount: discount,
-          mainImage: mainImage,
-          qty: qty,
-          reviewsCount: reviewsCount,
-          averageRating: averageRating,
-        );
+    required super.id,
+    required super.productId,
+    super.name,
+    super.price,
+    super.discount,
+    super.mainImage,
+    super.qty,
+    super.reviewsCount,
+    super.averageRating,
+  });
 
   factory WishlistItemModel.fromJson(Map<String, dynamic> json) {
   final id = json['idWishlist'] ?? json['IdWishlist'] ?? json['id'] ?? json['Id'] ?? 0;

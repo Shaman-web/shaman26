@@ -183,6 +183,11 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
                 leading: const Icon(Icons.logout),
                 title: const Text('تسجيل الخروج'),
                 onTap: () async {
+                  // prepare messenger/navigator/auth before any awaits to avoid using BuildContext across async gaps
+                  final messenger = ScaffoldMessenger.of(context);
+                  final navigator = Navigator.of(context);
+                  final auth = Provider.of<AuthProvider>(context, listen: false);
+
                   // close drawer first
                   Navigator.pop(context);
 
@@ -197,21 +202,13 @@ class _AppShellState extends State<AppShell> with TickerProviderStateMixin {
                       ],
                     ),
                   );
-
                   if (confirm != true) return;
-
-                  final messenger = ScaffoldMessenger.of(context);
-                  final auth = Provider.of<AuthProvider>(context, listen: false);
 
                   try {
                     await auth.logout();
                     if (!mounted) return;
                     messenger.showSnackBar(const SnackBar(content: Text('تم تسجيل الخروج')));
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginPage()),
-                      (route) => false,
-                    );
+                    navigator.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginPage()), (route) => false);
                   } catch (e) {
                     if (!mounted) return;
                     messenger.showSnackBar(SnackBar(content: Text('خطأ أثناء تسجيل الخروج: ${e.toString()}')));

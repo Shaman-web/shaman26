@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/category.dart';
+import 'package:shaman/core/widgets/rounded_card.dart';
 
 class CategoryCard extends StatelessWidget {
   final Category category;
@@ -9,33 +10,34 @@ class CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return RoundedCard(
       onTap: onTap,
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 4,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: category.imageUrl != null
-                    ? Hero(tag: 'cat-${category.id}', child: Image.network(category.imageUrl!, fit: BoxFit.cover))
-                    : Container(color: Colors.grey[200], child: const Icon(Icons.category, size: 48)),
-              ),
+      padding: EdgeInsets.zero,
+      minWidth: 120,
+      maxWidth: 180,
+      minHeight: 140,
+      maxHeight: 220,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              child: category.imageUrl != null
+                  ? Hero(tag: 'cat-${category.id}', child: Image.network(category.imageUrl!, fit: BoxFit.cover))
+                  : Container(color: Colors.grey[200], child: const Icon(Icons.category, size: 48)),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                category.name,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Text(
+              category.name,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

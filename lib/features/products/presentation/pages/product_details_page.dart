@@ -310,7 +310,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 ),
                 if (r.comment != null) const SizedBox(height: 6),
                 if (r.comment != null) Text(r.comment!),
-                if (r.createdAt != null) Align(alignment: Alignment.centerRight, child: Text('${r.createdAt!.toLocal().toString().split('.').first}', style: const TextStyle(fontSize: 10, color: Colors.grey))),
+                if (r.createdAt != null) Align(alignment: Alignment.centerRight, child: Text(r.createdAt!.toLocal().toString().split('.').first, style: const TextStyle(fontSize: 10, color: Colors.grey))),
               ],
             ),
           ),

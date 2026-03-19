@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shaman/core/widgets/avatar_header.dart';
 import 'package:shaman/core/widgets/animated_fade_in.dart';
+import 'package:shaman/core/widgets/rounded_card.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -15,7 +16,12 @@ class ProfilePage extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: AnimatedFadeIn(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [AvatarHeader(name: 'اسم المستخدم', subtitle: 'user@example.com')]),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              RoundedCard(
+                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                child: AvatarHeader(name: 'اسم المستخدم', subtitle: 'user@example.com'),
+              )
+            ]),
           ),
         ),
       ),

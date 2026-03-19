@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shaman/core/widgets/animated_fade_in.dart';
 import 'package:shaman/core/widgets/app_button.dart';
+import 'package:shaman/core/widgets/app_text_field.dart';
 import '../state/auth_provider.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/error_widget.dart';
@@ -37,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    AnimatedFadeIn(child: TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'البريد الإلكتروني'))),
+                    AnimatedFadeIn(child: AppTextField(controller: _emailController, label: 'البريد الإلكتروني')),
                     if (_recentAccounts.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Wrap(
@@ -51,7 +52,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ],
                     const SizedBox(height: 8),
-                    AnimatedFadeIn(child: TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'كلمة المرور'), obscureText: true)),
+                    AnimatedFadeIn(child: AppTextField(controller: _passwordController, label: 'كلمة المرور', obscureText: true)),
                     const SizedBox(height: 16),
                     AnimatedFadeIn(
                       child: AppButton(

@@ -1,34 +1,40 @@
 import 'package:flutter/material.dart';
 
+/// AppTheme: centralized, modern Material 3 theme used across the app.
 class AppTheme {
-  static const Color primary = Color(0xFF0066CC);
-  static const Color accent = Color(0xFF00BFA6);
-
-  static ThemeData get theme {
+  /// Returns a light theme using [seedColor] as a ColorScheme seed.
+  static ThemeData lightTheme({Color? seedColor}) {
+    final seed = seedColor ?? const Color(0xFF6750A4);
     final base = ThemeData.light(useMaterial3: true);
+    final scheme = ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.light);
+
     return base.copyWith(
-      colorScheme: ColorScheme.fromSeed(seedColor: primary),
-      primaryColor: primary,
-      scaffoldBackgroundColor: const Color(0xFFF6F8FB),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: primary,
-        foregroundColor: Colors.white,
-        elevation: 2,
+      colorScheme: scheme,
+  scaffoldBackgroundColor: scheme.surface,
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.surface,
+        foregroundColor: scheme.onSurface,
+        elevation: 1,
+        centerTitle: true,
       ),
-      // Use surface color and elevated card defaults; individual cards can set shape if needed
-      cardColor: Colors.white,
+      cardTheme: base.cardTheme.copyWith(
+        color: scheme.surface,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFF0F4F8),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+        fillColor: scheme.surfaceContainerHighest,
+        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
       textTheme: base.textTheme.apply(fontFamily: 'Roboto'),
     );

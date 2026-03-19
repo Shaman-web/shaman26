@@ -2,22 +2,14 @@ import '../../domain/entities/review.dart';
 
 class ReviewModel extends Review {
   ReviewModel({
-    required int id,
-    required int productId,
-    int? userId,
-    String? userName,
-    required int rating,
-    String? comment,
-    DateTime? createdAt,
-  }) : super(
-          id: id,
-          productId: productId,
-          userId: userId,
-          userName: userName,
-          rating: rating,
-          comment: comment,
-          createdAt: createdAt,
-        );
+    required super.id,
+    required super.productId,
+    super.userId,
+    super.userName,
+    required super.rating,
+    super.comment,
+    super.createdAt,
+  });
 
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
     // defensive parsing

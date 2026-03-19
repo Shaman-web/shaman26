@@ -24,6 +24,8 @@ class Product {
 
   final int categoryId;
   final String? categoryName;
+  final double? averageRating;
+  final int? reviewsCount;
 
   Product({
     required this.id,
@@ -46,5 +48,7 @@ class Product {
     this.longitude,
     required this.categoryId,
     this.categoryName,
+    this.averageRating,
+    this.reviewsCount,
   });
 }

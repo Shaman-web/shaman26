@@ -48,6 +48,16 @@ import 'features/products/data/repositories/reviews_repository_impl.dart';
 import 'features/products/domain/usecases/get_reviews_by_product_id.dart';
 import 'features/products/domain/usecases/create_review.dart';
 import 'features/products/presentation/state/reviews_provider.dart';
+// offers
+import 'features/offers/data/datasources/offers_remote_datasource.dart';
+import 'features/offers/data/repositories/offers_repository_impl.dart';
+import 'features/offers/domain/usecases/get_public_offers.dart';
+import 'features/offers/presentation/state/offers_provider.dart';
+// sellershop
+import 'features/sellershop/data/datasources/sellers_remote_datasource.dart';
+import 'features/sellershop/data/repositories/sellers_repository_impl.dart';
+import 'features/sellershop/domain/usecases/get_all_sellers.dart';
+import 'features/sellershop/presentation/state/sellers_provider.dart';
 // wishlist
 import 'features/wishlist/data/datasources/wishlist_remote_datasource.dart';
 import 'features/wishlist/data/repositories/wishlist_repository_impl.dart';
@@ -130,6 +140,14 @@ Future<void> main() async {
   final reviewsRepository = ReviewsRepositoryImpl(reviewsRemoteDataSource);
   final getReviewsByProductId = GetReviewsByProductId(reviewsRepository);
   final createReview = CreateReview(reviewsRepository);
+    // offers wiring
+    final offersRemoteDataSource = OffersRemoteDataSourceImpl(apiClient.client, tokenManager: tokenManager);
+    final offersRepository = OffersRepositoryImpl(offersRemoteDataSource);
+    final getPublicOffers = GetPublicOffers(offersRepository);
+      // sellershop wiring
+      final sellersRemoteDataSource = SellersRemoteDataSourceImpl(apiClient.client, tokenManager: tokenManager);
+      final sellersRepository = SellersRepositoryImpl(sellersRemoteDataSource);
+      final getAllSellers = GetAllSellers(sellersRepository);
   // wishlist wiring
   final wishlistRemoteDataSource = WishlistRemoteDataSourceImpl(apiClient.client, tokenManager: tokenManager);
   final wishlistRepository = WishlistRepositoryImpl(wishlistRemoteDataSource);
@@ -233,6 +251,12 @@ Future<void> main() async {
           ),
         ),
         ChangeNotifierProvider(
+          create: (_) => OffersProvider(getPublicOffers: getPublicOffers),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SellersProvider(getAllSellers: getAllSellers),
+        ),
+        ChangeNotifierProvider(
           create: (_) => WishlistProvider(
             getMyWishlist: getMyWishlist,
             addToWishlist: addToWishlist,
@@ -255,8 +279,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Shaman Shop',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.theme,
+  debugShowCheckedModeBanner: false,
+  theme: AppTheme.lightTheme(seedColor: const Color(0xFF6750A4)),
       home: isLoggedIn ? const AppShell() : const LoginPage(),
       routes: {
         '/home': (ctx) => const AppShell(),

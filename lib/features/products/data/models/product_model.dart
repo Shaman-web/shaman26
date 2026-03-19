@@ -22,6 +22,8 @@ class ProductModel extends Product {
     super.longitude,
     required super.categoryId,
     super.categoryName,
+    super.averageRating,
+    super.reviewsCount,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -46,6 +48,12 @@ class ProductModel extends Product {
       longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
       categoryId: json['categoryId'] ?? 0,
       categoryName: json['categoryName'],
+      averageRating: (() {
+        final avg = json['averageRating'] ?? json['AverageRating'];
+        if (avg == null) return null;
+        return (avg is String) ? double.tryParse(avg) : (avg as num).toDouble();
+      })(),
+  reviewsCount: json['reviewsCount'] ?? json['ReviewsCount'],
     );
   }
 

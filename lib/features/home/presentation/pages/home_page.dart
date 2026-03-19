@@ -3,12 +3,20 @@ import 'package:provider/provider.dart';
 import 'package:shaman/core/widgets/animated_fade_in.dart';
 import 'package:shaman/core/widgets/app_button.dart';
 import 'package:shaman/core/widgets/avatar_header.dart';
+import 'package:shaman/core/widgets/app_text_field.dart';
+import 'package:shaman/core/widgets/rounded_card.dart';
 import 'package:shaman/features/products/presentation/widgets/product_card.dart';
 import 'package:shaman/features/categories/presentation/widgets/category_card.dart';
 import 'package:shaman/features/products/presentation/state/products_provider.dart';
 import 'package:shaman/features/categories/presentation/state/categories_provider.dart';
+import 'package:shaman/features/offers/presentation/state/offers_provider.dart';
+import 'package:shaman/features/offers/presentation/widgets/offer_card.dart';
+import 'package:shaman/features/offers/presentation/pages/offers_page.dart';
 import 'package:shaman/features/categories/presentation/pages/category_details_page.dart';
 import 'package:shaman/features/products/presentation/pages/product_details_page.dart';
+import 'package:shaman/features/sellershop/presentation/state/sellers_provider.dart';
+import 'package:shaman/features/sellershop/presentation/widgets/seller_card.dart';
+import 'package:shaman/features/sellershop/presentation/pages/seller_details_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,6 +34,12 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ProductsProvider>(context, listen: false).fetchAll();
       Provider.of<CategoriesProvider>(context, listen: false).fetchAll();
+      try {
+        Provider.of<SellersProvider>(context, listen: false).fetchAll();
+      } catch (_) {}
+      try {
+        Provider.of<OffersProvider>(context, listen: false).fetchPublicOffers();
+      } catch (_) {}
     });
   }
 
@@ -43,6 +57,10 @@ class _HomePageState extends State<HomePage> {
     final featured = productsProv.items.take(5).toList();
     final latest = productsProv.items;
     final cats = categoriesProv.items;
+  final offersProv = Provider.of<OffersProvider>(context);
+  final offers = offersProv.items;
+  final sellersProv = Provider.of<SellersProvider>(context);
+  final sellers = sellersProv.items;
 
     return Scaffold(
       body: SafeArea(
@@ -65,13 +83,9 @@ class _HomePageState extends State<HomePage> {
                         const AvatarHeader(name: null, subtitle: null),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: 'ابحث عن منتج أو متجر',
-                              prefixIcon: const Icon(Icons.search),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            ),
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 4.0),
+                            child: AppTextField(controller: TextEditingController(), label: 'ابحث عن منتج أو متجر', prefixIcon: const Icon(Icons.search)),
                           ),
                         ),
                       ],
@@ -79,13 +93,100 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 16),
 
+                  // Sellers shops section — always show header; show loader/error/empty/list
+                  AnimatedFadeIn(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: const [
+                            Text('متاجر البائعين', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        height: 200,
+                        child: Builder(builder: (ctx) {
+                          // show states: loading, error, empty, or list
+                          if (sellersProv.status == SellersStatus.loading) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          if (sellersProv.status == SellersStatus.error) {
+                            return Center(child: Text(sellersProv.errorMessage ?? 'فشل تحميل المتاجر'));
+                          }
+                          if (sellers.isEmpty) {
+                            return const Center(child: Text('لا توجد متاجر متاحة حالياً'));
+                          }
+
+                          return ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (ctx, i) {
+                              final s = sellers[i];
+                              return SizedBox(
+                                width: 160,
+                                child: SellerCard(
+                                  seller: s,
+                                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SellerDetailsPage(sellerId: s.id))),
+                                ),
+                              );
+                            },
+                            separatorBuilder: (context, index) => const SizedBox(width: 12),
+                            itemCount: sellers.length,
+                          );
+                        }),
+                      ),
+                    ]),
+                  ),
+
+
+                  // Offers section
+                  if (offers.isNotEmpty)
+                    AnimatedFadeIn(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('العروض المؤقتة', style: TextStyle(fontWeight: FontWeight.bold)),
+                              TextButton(
+                                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OffersPage())),
+                                child: const Text('عرض الكل'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          height: 220,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (ctx, i) {
+                              final of = offers[i];
+                              return SizedBox(width: 160, child: OfferCard(offer: of, onTap: () async {
+                                // open product details
+                                await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProductDetailsPage(productId: of.productId)));
+                                productsProv.fetchAll();
+                              }));
+                            },
+                            separatorBuilder: (ctx2, idx) => const SizedBox(width: 12),
+                            itemCount: offers.length,
+                          ),
+                        ),
+                      ]),
+                    ),
+
+
                   // Banner
                   AnimatedFadeIn(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                    child: RoundedCard(
+                      padding: const EdgeInsets.all(12),
                       child: Container(
                         height: 140,
-                        color: Theme.of(context).colorScheme.primary,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Row(

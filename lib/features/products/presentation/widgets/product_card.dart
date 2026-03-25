@@ -3,7 +3,10 @@ import 'package:shaman/core/widgets/animated_fade_in.dart';
 import 'package:provider/provider.dart';
 import '../../domain/entities/product.dart';
 import '../../../wishlist/presentation/state/wishlist_provider.dart';
-import 'package:shaman/core/widgets/rounded_card.dart';
+import 'package:shaman/core/widgets/stylish_card.dart';
+import 'package:shaman/core/widgets/badge.dart';
+import 'package:shaman/core/widgets/rating_stars.dart';
+import 'package:shaman/core/theme/design_tokens.dart';
 
 class ProductCard extends StatefulWidget {
   final Product product;
@@ -36,12 +39,13 @@ class _ProductCardState extends State<ProductCard> {
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,
         child: AnimatedFadeIn(
-          child: RoundedCard(
+          child: StylishCard(
             padding: EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
+                SizedBox(
+                  height: 140,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -52,8 +56,8 @@ class _ProductCardState extends State<ProductCard> {
                             : Container(color: Colors.grey[200], child: const Icon(Icons.image, size: 48)),
                       ),
                       Positioned(
-                        top: 8,
-                        right: 8,
+                        top: 10,
+                        right: 10,
                         child: Consumer<WishlistProvider>(builder: (ctx, wp, ch) {
                           final inWishlist = wp.isInWishlist(product.id);
                           return GestureDetector(
@@ -68,142 +72,80 @@ class _ProductCardState extends State<ProductCard> {
                             },
                             child: CircleAvatar(
                               radius: 18,
-                                backgroundColor: Theme.of(context).colorScheme.surface.withAlpha((0.9 * 255).round()),
-                                child: Icon(inWishlist ? Icons.favorite : Icons.favorite_border, color: inWishlist ? Colors.red : Colors.grey),
+                              backgroundColor: DesignColors.surface.withAlpha((0.95 * 255).round()),
+                              child: Icon(inWishlist ? Icons.favorite : Icons.favorite_border, color: inWishlist ? Colors.red : Colors.grey),
                             ),
                           );
                         }),
                       ),
-                      // discount badge (if any) - placed topLeft
-                      if (product.discount > 0)
-                        Positioned(
-                          left: 8,
-                          top: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(12)),
-                            child: Text('-${(product.discount * 100).toStringAsFixed(0)}%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                          ),
-                        ),
+                      if (product.discount > 0) Positioned(left: 10, top: 10, child: AppBadge(text: '-${(product.discount * 100).toStringAsFixed(0)}%')),
                     ],
                   ),
                 ),
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // product name
-                        Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 8),
-                        // rating row (if available)
-                        Builder(builder: (ctx) {
-                          // try to read optional rating fields if present on model
-                          double? avg;
-                          int? reviewsCount;
-                          try {
-                            final p = product as dynamic;
-                            avg = (p.averageRating == null) ? null : (p.averageRating as double?);
-                            reviewsCount = (p.reviewsCount == null) ? null : (p.reviewsCount as int?);
-                          } catch (_) {
-                            avg = null;
-                            reviewsCount = null;
-                          }
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(product.name, style: DesignText.subheading, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 8),
+                    Builder(builder: (ctx) {
+                      double? avg;
+                      int? reviewsCount;
+                      try {
+                        final p = product as dynamic;
+                        avg = (p.averageRating == null) ? null : (p.averageRating as double?);
+                        reviewsCount = (p.reviewsCount == null) ? null : (p.reviewsCount as int?);
+                      } catch (_) {
+                        avg = null;
+                        reviewsCount = null;
+                      }
 
-                          if (avg != null && avg > 0) {
-                            // Use Wrap so rating items can wrap to the next line on narrow widths
-                            return Wrap(
-                              spacing: 6,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                _StarRating(rating: avg, size: 14),
-                                // ensure numeric text doesn't overflow the available space
-                                SizedBox(
-                                  width: 36,
-                                  child: Text(avg.toStringAsFixed(1), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                ),
-                                if (reviewsCount != null)
-                                  SizedBox(
-                                    width: 48,
-                                    child: Text('($reviewsCount)', style: const TextStyle(fontSize: 12, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                  ),
-                              ],
-                            );
-                          }
+                      if (avg != null && avg > 0) {
+                        return Row(children: [
+                          RatingStars(rating: avg, size: 14),
+                          const SizedBox(width: 6),
+                          Text(avg.toStringAsFixed(1), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                          const SizedBox(width: 6),
+                          if (reviewsCount != null) Text('($reviewsCount)', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        ]);
+                      }
 
-                          return const Text('لا تقييم', style: TextStyle(fontSize: 12, color: Colors.grey));
-                        }),
-                        const SizedBox(height: 8),
-                        // prices
-                        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                          // current price (allow shrinking)
-                          Flexible(
-                            fit: FlexFit.loose,
-                            child: Text(
-                              '${(product.discount > 0 ? (product.price * (1 - product.discount)) : product.price).toStringAsFixed(2)} ر.س',
-                              style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                      return const Text('لا تقييم', style: TextStyle(fontSize: 12, color: Colors.grey));
+                    }),
+                    const SizedBox(height: 8),
+                    Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Flexible(
+                        fit: FlexFit.loose,
+                        child: Text(
+                          '${(product.discount > 0 ? (product.price * (1 - product.discount)) : product.price).toStringAsFixed(2)} ر.س',
+                          style: TextStyle(color: DesignColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (product.discount > 0)
+                        Flexible(
+                          fit: FlexFit.loose,
+                          child: Text(
+                            '${product.price.toStringAsFixed(2)} ر.س',
+                            style: const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.grey, fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(width: 8),
-                          // old price
-                          if (product.discount > 0)
-                            Flexible(
-                              fit: FlexFit.loose,
-                              child: Text(
-                                '${product.price.toStringAsFixed(2)} ر.س',
-                                style: const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.grey, fontSize: 12),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          const Spacer(),
-                          // small add-to-cart or qty indicator
-                          if (product.qty <= 0)
-                            SizedBox(
-                              width: 80,
-                              child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12)), alignment: Alignment.center, child: const Text('غير متوفر', style: TextStyle(fontSize: 12))),
-                            )
-                          else
-                            SizedBox(
-                              width: 80,
-                              child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Theme.of(context).colorScheme.secondary.withAlpha((0.12 * 255).round()), borderRadius: BorderRadius.circular(12)), alignment: Alignment.center, child: const Text('متوفر', style: TextStyle(fontSize: 12))),
-                            )
-                        ])
-                      ],
-                    ),
-                  ),
+                        ),
+                      const Spacer(),
+                      if (product.qty <= 0)
+                        SizedBox(width: 80, child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12)), alignment: Alignment.center, child: const Text('غير متوفر', style: TextStyle(fontSize: 12)))),
+                      if (product.qty > 0)
+                        SizedBox(width: 80, child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: DesignColors.accent.withAlpha((0.12 * 255).round()), borderRadius: BorderRadius.circular(12)), alignment: Alignment.center, child: const Text('متوفر', style: TextStyle(fontSize: 12)))),
+                    ])
+                  ]),
+                ),
               ],
             ),
           ),
         ),
       ),
     );
-  }
-}
-
-// Small widget to render star rating with half-star support.
-class _StarRating extends StatelessWidget {
-  final double rating; // expected 0..5
-  final double size;
-
-  const _StarRating({required this.rating, this.size = 16});
-
-  @override
-  Widget build(BuildContext context) {
-    final List<Widget> stars = List.generate(5, (i) {
-      final idx = i + 1;
-      IconData icon;
-      if (rating >= idx) {
-        icon = Icons.star;
-      } else if (rating >= idx - 0.5) {
-        icon = Icons.star_half;
-      } else {
-        icon = Icons.star_border;
-      }
-  return Icon(icon, size: size, color: Colors.amber[600]);
-    });
-    return Row(mainAxisSize: MainAxisSize.min, children: stars);
   }
 }

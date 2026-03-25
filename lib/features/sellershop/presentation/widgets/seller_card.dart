@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/seller.dart';
+import 'package:shaman/core/widgets/stylish_card.dart';
+// removed unused imports
 
 class SellerCard extends StatelessWidget {
   final Seller seller;
@@ -14,14 +16,12 @@ class SellerCard extends StatelessWidget {
       width: 160,
       child: GestureDetector(
         onTap: onTap,
-        child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 2,
+        child: StylishCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(
-                height: 120,
+                height: 100,
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                   child: img != null
@@ -29,13 +29,15 @@ class SellerCard extends StatelessWidget {
                       : Container(color: Colors.grey[200], child: const Icon(Icons.store, size: 48)),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(seller.shopName ?? seller.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 4),
-                  if (seller.location != null) Text(seller.location!, style: const TextStyle(fontSize: 12, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
-                ]),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(seller.shopName ?? seller.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 4),
+                    if (seller.location != null) Text(seller.location!, style: const TextStyle(fontSize: 12, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ]),
+                ),
               ),
             ],
           ),

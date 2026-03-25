@@ -2,7 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../domain/entities/offer.dart';
-// removed unused import
+import '../../../wishlist/presentation/state/wishlist_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:shaman/core/widgets/stylish_card.dart';
+import 'package:shaman/core/widgets/badge.dart';
+import 'package:shaman/core/widgets/rating_stars.dart';
+import 'package:shaman/core/theme/design_tokens.dart';
 
 class OfferCard extends StatefulWidget {
   final Offer offer;
@@ -12,31 +17,6 @@ class OfferCard extends StatefulWidget {
 
   @override
   State<OfferCard> createState() => _OfferCardState();
-}
-
-// small star rating widget with half-star support (kept local to avoid introducing new imports)
-class _StarRating extends StatelessWidget {
-  final double rating; // 0..5
-  final double size;
-
-  const _StarRating({required this.rating, this.size = 14});
-
-  @override
-  Widget build(BuildContext context) {
-    final List<Widget> stars = List.generate(5, (i) {
-      final idx = i + 1;
-      IconData icon;
-      if (rating >= idx) {
-        icon = Icons.star;
-      } else if (rating >= idx - 0.5) {
-        icon = Icons.star_half;
-      } else {
-        icon = Icons.star_border;
-      }
-  return Icon(icon, size: size, color: Colors.amber[600]);
-    });
-    return Row(mainAxisSize: MainAxisSize.min, children: stars);
-  }
 }
 
 class _OfferCardState extends State<OfferCard> {
@@ -100,9 +80,7 @@ class _OfferCardState extends State<OfferCard> {
     final hours = d.inHours % 24;
     final minutes = d.inMinutes % 60;
     final seconds = d.inSeconds % 60;
-    // show days explicitly when >= 1 day
     if (days > 0) {
-      // Example: "2 يوم 05:12:30"
       return '$days يوم ${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
 
@@ -116,7 +94,6 @@ class _OfferCardState extends State<OfferCard> {
     final imageUrl = (raw != null && raw.startsWith('/')) ? 'https://localhost:7095$raw' : raw;
     final expired = _remaining != null && _remaining == Duration.zero;
 
-    // compute progress if start/end present
     double? progress;
     if (offer.startDateTime != null && offer.endDateTime != null) {
       final total = offer.endDateTime!.difference(offer.startDateTime!);
@@ -126,8 +103,7 @@ class _OfferCardState extends State<OfferCard> {
       }
     }
 
-    // decide chip color based on remaining
-    Color chipColor = Theme.of(context).colorScheme.primary;
+    Color chipColor = DesignColors.primary;
     if (_remaining == null) {
       chipColor = Colors.blueGrey;
     } else if (_remaining == Duration.zero) {
@@ -140,109 +116,99 @@ class _OfferCardState extends State<OfferCard> {
 
     return GestureDetector(
       onTap: expired ? null : widget.onTap,
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 3,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              height: 120,
-              child: Stack(children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                  child: imageUrl!= null
-                      ? Image.network(imageUrl, fit: BoxFit.cover, width: double.infinity)
-                      : Container(color: Colors.grey[200], child: const Icon(Icons.image, size: 40)),
-                ),
-                // countdown chip top-left
-                Positioned(
-                  left: 8,
-                  top: 8,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: chipColor, borderRadius: BorderRadius.circular(16)),
-                    child: Text(
-                      _remaining == null ? 'مستمر' : _formatDuration(_remaining!),
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+      child: SizedBox(
+        // give the offer card a slightly larger min size
+          child: SizedBox(
+          width: 300,
+          height: 400,
+          child: StylishCard(
+            child: InkWell(
+              onTap: expired ? null : widget.onTap,
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                height: 400,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  // Fixed-height image area with gradient overlay
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    child: SizedBox(
+                      height: 180,
+                      child: Stack(fit: StackFit.expand, children: [
+                        imageUrl != null
+                            ? Image.network(imageUrl, fit: BoxFit.cover)
+                            : Container(color: Colors.grey[200], alignment: Alignment.center, child: const Icon(Icons.image, size: 40)),
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withAlpha((0.45 * 255).round())]),
+                            ),
+                          ),
+                        ),
+                        Positioned(left: 8, top: 8, child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: chipColor, borderRadius: BorderRadius.circular(20)), child: Text(_remaining == null ? 'مستمر' : _formatDuration(_remaining!), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)))),
+                        if (offer.discount > 0) Positioned(right: 8, top: 8, child: AppBadge(text: '-${(offer.discount * 100).toStringAsFixed(0)}%')),
+                        Positioned(right: 10, top: 48, child: Consumer<WishlistProvider>(builder: (ctx, wp, ch) {
+                          final inWishlist = wp.isInWishlist(offer.productId);
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () async {
+                                final messenger = ScaffoldMessenger.of(context);
+                                try {
+                                  final added = await wp.toggle(offer.productId);
+                                  messenger.showSnackBar(SnackBar(content: Text(added ? 'تمت الإضافة للمفضلة' : 'تم الحذف من المفضلة')));
+                                } catch (e) {
+                                  messenger.showSnackBar(SnackBar(content: Text('فشل العملية: ${e.toString()}')));
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: CircleAvatar(radius: 18, backgroundColor: DesignColors.surface.withAlpha((0.9 * 255).round()), child: Icon(inWishlist ? Icons.favorite : Icons.favorite_border, color: inWishlist ? Colors.red : Colors.white)),
+                            ),
+                          );
+                        })),
+                        // title + rating overlay
+                        Positioned(left: 12, right: 12, bottom: 12, child: Row(children: [
+                          Expanded(child: Text(offer.productName, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700), maxLines: 3, overflow: TextOverflow.ellipsis)),
+                          if (offer.averageRating != null && offer.averageRating! > 0) Padding(padding: const EdgeInsets.only(left: 8.0), child: RatingStars(rating: offer.averageRating!, size: 14))
+                        ]))
+                      ]),
                     ),
                   ),
-                ),
-                // discount badge top-right
-                if (offer.discount > 0)
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(16)),
-                      child: Text('-${(offer.discount * 100).toStringAsFixed(0)}%', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                if (expired)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(color: Colors.black.withAlpha((0.45 * 255).round()), borderRadius: const BorderRadius.vertical(top: Radius.circular(12))),
-                      alignment: Alignment.center,
-                      child: const Text('انتهى العرض', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                // progress bar bottom of image
-                if (progress != null)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: LinearProgressIndicator(value: progress, minHeight: 4, backgroundColor: Colors.black26, valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary)),
-                  ),
-              ]),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                // Top row: product name and rating
-                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+                  // Details area (fixed height to show all details)
                   Expanded(
-                    child: Text(offer.productName, style: const TextStyle(fontWeight: FontWeight.w700), maxLines: 2, overflow: TextOverflow.ellipsis),
-                  ),
-                  const SizedBox(width: 8),
-                  // rating (if available)
-                  if (offer.averageRating != null && offer.averageRating! > 0)
-                    Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      _StarRating(rating: offer.averageRating!, size: 12),
-                      if (offer.reviewsCount != null) Text('(${offer.reviewsCount})', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                    ])
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        // Price and time/progress
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.center, children: [
+                          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text('${(offer.discount > 0 ? (offer.price * (1 - offer.discount)) : offer.price).toStringAsFixed(2)} ر.س', style: TextStyle(color: DesignColors.primary, fontWeight: FontWeight.bold, fontSize: 16, height: 1.1)),
+                            if (offer.discount > 0) Padding(padding: const EdgeInsets.only(top: 2.0), child: Text('${offer.price.toStringAsFixed(2)} ر.س', style: const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.grey, fontSize: 11, height: 1.0))),
+                          ]),
+
+                          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                            if (_remaining != null) Text(_formatDuration(_remaining!), style: TextStyle(color: expired ? Colors.red.shade200 : DesignColors.primary, fontWeight: FontWeight.w600, height: 1.05)),
+                            const SizedBox(height: 6),
+                            if (progress != null) SizedBox(width: 90, child: LinearProgressIndicator(value: progress, minHeight: 6, backgroundColor: Colors.black12, valueColor: AlwaysStoppedAnimation(DesignColors.secondary))),
+                          ])
+                        ]),
+
+                        const SizedBox(height: 6),
+                        // Full title and meta (no truncation beyond 3 lines for title)
+                        Text(offer.productName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, height: 1.15), maxLines: 3, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 6),
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                          if (offer.reviewsCount != null) Text('${offer.reviewsCount} تقييم', style: const TextStyle(fontSize: 12, color: Colors.grey, height: 1.0)),
+                          // placeholder for actions or tags
+                          const SizedBox.shrink()
+                        ])
+                      ]),
+                    ),
+                  )
                 ]),
-                const SizedBox(height: 6),
-                // remaining time
-                if (_remaining != null)
-                  Text(_formatDuration(_remaining!), style: TextStyle(color: expired ? Colors.red.shade200 : Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                // price row: current price prominent, old price struck, discount badge
-                Row(children: [
-                  // current price
-                  Expanded(
-                    child: Text(
-                      '${(offer.discount > 0 ? (offer.price * (1 - offer.discount)) : offer.price).toStringAsFixed(2)} ر.س',
-                      style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  if (offer.discount > 0)
-                    Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      Text('${offer.price.toStringAsFixed(2)} ر.س', style: const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.grey, fontSize: 12)),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: Colors.redAccent.withAlpha((0.95 * 255).round()), borderRadius: BorderRadius.circular(12)),
-                        child: Text('-${(offer.discount * 100).toStringAsFixed(0)}%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                      )
-                    ])
-                ])
-              ]),
-            )
-          ],
+              ),
+            ),
+          ),
         ),
       ),
     );

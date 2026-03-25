@@ -280,7 +280,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Shaman Shop',
   debugShowCheckedModeBanner: false,
-  theme: AppTheme.lightTheme(seedColor: const Color(0xFF6750A4)),
+  theme: AppTheme.lightTheme(),
       home: isLoggedIn ? const AppShell() : const LoginPage(),
       routes: {
         '/home': (ctx) => const AppShell(),

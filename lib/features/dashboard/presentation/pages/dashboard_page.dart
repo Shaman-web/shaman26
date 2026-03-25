@@ -12,19 +12,23 @@ class DashboardPage extends StatelessWidget {
         children: [
           const Text('لوحة التحكم', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
-          GridView.count(
-            shrinkWrap: true,
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _StatCard(title: 'عدد المنتجات', value: '124'),
-              _StatCard(title: 'المبيعات اليوم', value: '1,240'),
-              _StatCard(title: 'المستخدمون', value: '3,210'),
-              _StatCard(title: 'الأرباح', value: '12,400'),
-            ],
-          ),
+          // Responsive stat cards: use Wrap so content can flow vertically without
+          // causing GridView inside a Column overflow issues.
+          LayoutBuilder(builder: (ctx, constraints) {
+            // decide card width: for wide screens show two columns, otherwise one
+            final maxWidth = constraints.maxWidth;
+            final cardWidth = maxWidth >= 500 ? (maxWidth - 12) / 2 : maxWidth;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                SizedBox(width: cardWidth, child: _StatCard(title: 'عدد المنتجات', value: '124')),
+                SizedBox(width: cardWidth, child: _StatCard(title: 'المبيعات اليوم', value: '1,240')),
+                SizedBox(width: cardWidth, child: _StatCard(title: 'المستخدمون', value: '3,210')),
+                SizedBox(width: cardWidth, child: _StatCard(title: 'الأرباح', value: '12,400')),
+              ],
+            );
+          }),
           const SizedBox(height: 16),
           const Text('ملخص الأداء', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
